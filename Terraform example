@@ -1,0 +1,54 @@
+terraform {
+ required_providers {
+   rediscloud = {
+     source = "RedisLabs/rediscloud"
+   }
+ }
+}
+# Provide your credit card details
+#data "rediscloud_payment_method" "card" {
+ #card_type = "Visa"
+ #last_four_numbers = "2094"
+#}
+provider "rediscloud" {
+  url = "https://api.redislabs.com/v1"
+  api_key    = "A5fdr1gls4cyu47qpy3g1kdt7oyqeglkrw1efntdo28chkr0vzf"  # Marketplace Keys
+  secret_key = "S58r56jtkord2bh9xe2fudnvbahba9plt5yyliubct2ymppiecs"
+}
+# Generates a random password for the database
+resource "random_password" "passwords" {
+ count = 2
+ length = 20
+ upper = true
+ lower = true
+ number = true
+ special = false
+}
+ 
+resource "rediscloud_subscription" "example" {
+ name = "dallas-tf-mp"
+ #payment_method_id = data.rediscloud_payment_method.card.id
+ memory_storage = "ram"
+ 
+ cloud_provider {
+   #Running in GCP on Redis resources
+   provider = "GCP"
+   cloud_account_id = 1
+   region {
+     region = "us-central1"
+     networking_deployment_cidr = "10.0.0.0/24"
+     multiple_availability_zones = true
+     preferred_availability_zones = ["us-central1-a, us-central1-b, us-central1-c"]
+   }
+ }
+ database {
+   name = "dallas-test-mp"
+   protocol = "redis"
+   memory_limit_in_gb = 1
+   replication = false
+   data_persistence = "none"
+   throughput_measurement_by = "number-of-shards"
+   throughput_measurement_value = 1
+   password = random_password.passwords[0].result
+ }
+}
